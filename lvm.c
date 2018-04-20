@@ -35,8 +35,10 @@
 ** By default, use jump tables in the main interpreter loop on gcc
 ** and compatible compilers.
 */
-#if !defined(LUA_USE_JUMPTABLE)
-#define LUA_USE_JUMPTABLE	defined(__GNUC__)
+#if !defined(LUA_USE_JUMPTABLE) && defined(__GNUC__)
+    #define LUA_USE_JUMPTABLE 1
+#else
+    #define LUA_USE_JUMPTABLE 0
 #endif
 
 
@@ -974,7 +976,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         TValue *rc = vRC(i);
         lua_Unsigned n;
         if (ttisinteger(rc)  /* fast track for integers? */
-            ? (n = ivalue(rc), luaV_fastgeti(L, rb, n, slot))
+            ? ((void)(n = ivalue(rc)), luaV_fastgeti(L, rb, n, slot))
             : luaV_fastget(L, rb, rc, slot, luaH_get)) {
           setobj2s(L, ra, slot);
         }
@@ -1027,7 +1029,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         TValue *rc = RKC(i);  /* value */
         lua_Unsigned n;
         if (ttisinteger(rb)  /* fast track for integers? */
-            ? (n = ivalue(rb), luaV_fastgeti(L, vra, n, slot))
+            ? ((void)(n = ivalue(rb)), luaV_fastgeti(L, vra, n, slot))
             : luaV_fastget(L, vra, rb, slot, luaH_get)) {
           luaV_finishfastset(L, vra, slot, rc);
         }
@@ -1089,7 +1091,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_ADDI) {
         TValue *rb = vRB(i);
         int ic = GETARG_sC(i);
-        lua_Number nb;
+        lua_Number nb = 0.0;
         if (ttisinteger(rb)) {
           setivalue(vra, intop(+, ivalue(rb), ic));
         }
@@ -1103,7 +1105,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_SUBI) {
         TValue *rb = vRB(i);
         int ic = GETARG_sC(i);
-        lua_Number nb;
+        lua_Number nb = 0.0;
         if (ttisinteger(rb)) {
           setivalue(vra, intop(-, ivalue(rb), ic));
         }
@@ -1117,7 +1119,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_MULI) {
         TValue *rb = vRB(i);
         int ic = GETARG_sC(i);
-        lua_Number nb;
+        lua_Number nb = 0.0;
         if (ttisinteger(rb)) {
           setivalue(vra, intop(*, ivalue(rb), ic));
         }
@@ -1131,7 +1133,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_MODI) {
         TValue *rb = vRB(i);
         int ic = GETARG_sC(i);
-        lua_Number nb;
+        lua_Number nb = 0.0;
         if (ttisinteger(rb)) {
           setivalue(vra, luaV_mod(L, ivalue(rb), ic));
         }
@@ -1148,7 +1150,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_POWI) {
         TValue *rb = vRB(i);
         int ic = GETARG_sC(i);
-        lua_Number nb;
+        lua_Number nb = 0.0;
         if (tonumberns(rb, nb)) {
           lua_Number nc = cast_num(ic);
           setfltvalue(vra, luai_numpow(L, nb, nc));
@@ -1160,7 +1162,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_DIVI) {
         TValue *rb = vRB(i);
         int ic = GETARG_sC(i);
-        lua_Number nb;
+        lua_Number nb = 0.0;
         if (tonumberns(rb, nb)) {
           lua_Number nc = cast_num(ic);
           setfltvalue(vra, luai_numdiv(L, nb, nc));
@@ -1172,7 +1174,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_IDIVI) {
         TValue *rb = vRB(i);
         int ic = GETARG_sC(i);
-        lua_Number nb;
+        lua_Number nb = 0.0;
         if (ttisinteger(rb)) {
           setivalue(vra, luaV_div(L, ivalue(rb), ic));
         }
@@ -1187,7 +1189,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_ADD) {
         TValue *rb = vRB(i);
         TValue *rc = vRC(i);
-        lua_Number nb; lua_Number nc;
+        lua_Number nb = 0.0; lua_Number nc = 0.0;
         if (ttisinteger(rb) && ttisinteger(rc)) {
           lua_Integer ib = ivalue(rb); lua_Integer ic = ivalue(rc);
           setivalue(vra, intop(+, ib, ic));
@@ -1202,7 +1204,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_SUB) {
         TValue *rb = vRB(i);
         TValue *rc = vRC(i);
-        lua_Number nb; lua_Number nc;
+        lua_Number nb = 0.0; lua_Number nc = 0.0;
         if (ttisinteger(rb) && ttisinteger(rc)) {
           lua_Integer ib = ivalue(rb); lua_Integer ic = ivalue(rc);
           setivalue(vra, intop(-, ib, ic));
@@ -1217,7 +1219,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_MUL) {
         TValue *rb = vRB(i);
         TValue *rc = vRC(i);
-        lua_Number nb; lua_Number nc;
+        lua_Number nb = 0.0; lua_Number nc = 0.0;
         if (ttisinteger(rb) && ttisinteger(rc)) {
           lua_Integer ib = ivalue(rb); lua_Integer ic = ivalue(rc);
           setivalue(vra, intop(*, ib, ic));
@@ -1232,7 +1234,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_DIV) {  /* float division (always with floats) */
         TValue *rb = vRB(i);
         TValue *rc = vRC(i);
-        lua_Number nb; lua_Number nc;
+        lua_Number nb = 0.0; lua_Number nc = 0.0;
         if (tonumberns(rb, nb) && tonumberns(rc, nc)) {
           setfltvalue(vra, luai_numdiv(L, nb, nc));
         }
@@ -1358,7 +1360,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_MOD) {
         TValue *rb = vRB(i);
         TValue *rc = vRC(i);
-        lua_Number nb; lua_Number nc;
+        lua_Number nb = 0.0; lua_Number nc = 0.0;
         if (ttisinteger(rb) && ttisinteger(rc)) {
           lua_Integer ib = ivalue(rb); lua_Integer ic = ivalue(rc);
           setivalue(vra, luaV_mod(L, ib, ic));
@@ -1375,7 +1377,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_IDIV) {  /* floor division */
         TValue *rb = vRB(i);
         TValue *rc = vRC(i);
-        lua_Number nb; lua_Number nc;
+        lua_Number nb = 0.0; lua_Number nc = 0.0;
         if (ttisinteger(rb) && ttisinteger(rc)) {
           lua_Integer ib = ivalue(rb); lua_Integer ic = ivalue(rc);
           setivalue(vra, luaV_div(L, ib, ic));
@@ -1390,7 +1392,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       vmcase(OP_POW) {
         TValue *rb = vRB(i);
         TValue *rc = vRC(i);
-        lua_Number nb; lua_Number nc;
+        lua_Number nb = 0.0; lua_Number nc = 0.0;
         if (tonumberns(rb, nb) && tonumberns(rc, nc)) {
           setfltvalue(vra, luai_numpow(L, nb, nc));
         }
@@ -1400,7 +1402,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
       }
       vmcase(OP_UNM) {
         TValue *rb = vRB(i);
-        lua_Number nb;
+        lua_Number nb = 0.0;
         if (ttisinteger(rb)) {
           lua_Integer ib = ivalue(rb);
           setivalue(vra, intop(-, 0, ib));

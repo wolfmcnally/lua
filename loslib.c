@@ -136,8 +136,22 @@ static time_t l_checktime (lua_State *L, int arg) {
 /* }================================================================== */
 
 
+#ifndef LUA_IOS
+    #if defined(__APPLE__)
+        #include "TargetConditionals.h"
 
+        #if TARGET_OS_IOS
+            #define LUA_IOS 1
+        #else
+            #define LUA_IOS 0
+        #endif
 
+    #else
+        #define LUA_IOS 0
+    #endif
+#endif
+
+#if !LUA_IOS
 static int os_execute (lua_State *L) {
   const char *cmd = luaL_optstring(L, 1, NULL);
   int stat = system(cmd);
@@ -148,6 +162,7 @@ static int os_execute (lua_State *L) {
     return 1;
   }
 }
+#endif
 
 
 static int os_remove (lua_State *L) {
@@ -163,6 +178,7 @@ static int os_rename (lua_State *L) {
 }
 
 
+#if !LUA_IOS
 static int os_tmpname (lua_State *L) {
   char buff[LUA_TMPNAMBUFSIZE];
   int err;
@@ -172,6 +188,7 @@ static int os_tmpname (lua_State *L) {
   lua_pushstring(L, buff);
   return 1;
 }
+#endif
 
 
 static int os_getenv (lua_State *L) {
@@ -387,14 +404,18 @@ static const luaL_Reg syslib[] = {
   {"clock",     os_clock},
   {"date",      os_date},
   {"difftime",  os_difftime},
+#if !LUA_IOS
   {"execute",   os_execute},
+#endif
   {"exit",      os_exit},
   {"getenv",    os_getenv},
   {"remove",    os_remove},
   {"rename",    os_rename},
   {"setlocale", os_setlocale},
   {"time",      os_time},
+#if !LUA_IOS
   {"tmpname",   os_tmpname},
+#endif
   {NULL, NULL}
 };
 

@@ -94,7 +94,7 @@ void luaF_unlinkupval (UpVal *uv) {
 void luaF_close (lua_State *L, StkId level) {
   UpVal *uv;
   while (L->openupval != NULL &&
-        (uv = L->openupval, uplevel(uv) >= level)) {
+         ((void)(uv = L->openupval), uplevel(uv) >= level)) {
     TValue *slot = &uv->u.value;  /* new position for value */
     luaF_unlinkupval(uv);
     setobj(L, slot, uv->v);  /* move value to upvalue slot */

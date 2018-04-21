@@ -140,7 +140,7 @@ static time_t l_checktime (lua_State *L, int arg) {
     #if defined(__APPLE__)
         #include "TargetConditionals.h"
 
-        #if TARGET_OS_IOS
+        #if TARGET_OS_IOS || TARGET_OS_TV
             #define LUA_IOS 1
         #else
             #define LUA_IOS 0
